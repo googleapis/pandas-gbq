@@ -630,6 +630,7 @@ def _finalize_dtypes(
     """
     import db_dtypes
     import pandas.api.types
+    import pandas as pd
 
     # If you update this mapping, also update the table at
     # `docs/reading.rst`.
@@ -651,6 +652,15 @@ def _finalize_dtypes(
         # object dtypes.
         if dtype and pandas.api.types.is_object_dtype(df[name]):
             df[name] = df[name].astype(dtype, errors="ignore")
+
+        # From pandas 2.0, returns datetime64[us]. Convert to datetime64[ns].
+        if pd.__version__ >= "2.0.0":
+            if (
+                field["type"].upper() in ("DATETIME", "TIMESTAMP")
+                and pandas.api.types.is_datetime64_dtype(df[name])
+                and not pandas.api.types.is_datetime64_ns_dtype(df[name])
+            ):
+                df[name] = df[name].dt.as_unit("ns")
 
     # Ensure any TIMESTAMP columns are tz-aware.
     df = pandas_gbq.timestamp.localize_df(df, schema_fields)

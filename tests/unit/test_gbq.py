@@ -114,6 +114,29 @@ def test__bqschema_to_nullsafe_dtypes(type_, expected):
 
 
 @pytest.mark.parametrize(
+    ("data", "schema_type", "expected"),
+    [
+        (
+            pandas.Timestamp("2017-01-01T12:00:00Z").as_unit("us"),
+            "TIMESTAMP",
+            pandas.DatetimeTZDtype(unit="ns", tz="UTC"),
+        ),
+        (
+            pandas.Timestamp("2017-01-01T12:00:00").as_unit("us"),
+            "DATETIME",
+            numpy.dtype("datetime64[ns]"),
+        ),
+    ],
+)
+def test__finalize_dtypes(data, schema_type, expected):
+    result = gbq._finalize_dtypes(
+        pandas.DataFrame([dict(x=data)]),
+        [dict(name="x", type=schema_type, mode="NULLABLE")],
+    )
+    assert result["x"].dtype == expected
+
+
+@pytest.mark.parametrize(
     ["query_or_table", "expected"],
     [
         ("SELECT 1", True),
