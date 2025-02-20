@@ -16,6 +16,7 @@ import pytest
 
 from pandas_gbq.features import FEATURES
 
+
 QueryTestCase = collections.namedtuple(
     "QueryTestCase",
     ["query", "expected", "use_bqstorage_apis"],
@@ -628,7 +629,9 @@ ORDER BY row_num ASC
             ),
             "datetime_col": pandas.Series(
                 [],
-                dtype="datetime64[ns]",
+                dtype="datetime64[us]"
+                if FEATURES.pandas_has_microseconds_datetime
+                else "datetime64[ns]",
             ),
             "float_col": pandas.Series([], dtype="float64"),
             "int64_col": pandas.Series([], dtype="Int64"),
@@ -640,8 +643,10 @@ ORDER BY row_num ASC
             ),
             "timestamp_col": pandas.Series(
                 [],
-                dtype="datetime64[ns]",
-            ).dt.tz_localize(datetime.timezone.utc),
+                dtype=pandas.DatetimeTZDtype(unit="us", tz="UTC")
+                if FEATURES.pandas_has_microseconds_datetime
+                else pandas.DatetimeTZDtype(tz="UTC"),
+            ),
         }
     )
     result = read_gbq(query, use_bqstorage_api=use_bqstorage_api)

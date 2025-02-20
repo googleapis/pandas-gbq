@@ -9,6 +9,7 @@ BIGQUERY_MINIMUM_VERSION = "3.4.2"
 BIGQUERY_QUERY_AND_WAIT_VERSION = "3.14.0"
 PANDAS_VERBOSITY_DEPRECATION_VERSION = "0.23.0"
 PANDAS_BOOLEAN_DTYPE_VERSION = "1.0.0"
+PANDAS_MICROSECTONDS_DATETIME_VERSION = "2.1.0"
 
 
 class Features:
@@ -79,6 +80,13 @@ class Features:
         import packaging.version
 
         desired_version = packaging.version.parse(PANDAS_BOOLEAN_DTYPE_VERSION)
+        return self.pandas_installed_version >= desired_version
+
+    @property
+    def pandas_has_microseconds_datetime(self):
+        import packaging.version
+
+        desired_version = packaging.version.parse(PANDAS_MICROSECTONDS_DATETIME_VERSION)
         return self.pandas_installed_version >= desired_version
 
 

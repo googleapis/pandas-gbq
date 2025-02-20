@@ -16,6 +16,9 @@ import pytest
 pytest.importorskip("google.cloud.bigquery", minversion="1.24.0")
 
 
+PANDAS_VERSION = tuple(int(part) for part in pandas.__version__.split(".")[:2])
+
+
 @pytest.fixture(params=["load_parquet", "load_csv"])
 def api_method(request):
     return request.param
@@ -343,25 +346,33 @@ DATAFRAME_ROUND_TRIPS = [
                     # require `date_as_object` parameter in
                     # google-cloud-bigquery versions 1.x and 2.x, but not 3.x.
                     # https://github.com/googleapis/python-bigquery-pandas/issues/365
-                    "datetime_col": [
-                        datetime.datetime(1, 1, 1),
-                        datetime.datetime(1970, 1, 1),
-                        datetime.datetime(9999, 12, 31, 23, 59, 59, 999999),
-                    ],
-                    "timestamp_col": [
-                        datetime.datetime(1, 1, 1, tzinfo=datetime.timezone.utc),
-                        datetime.datetime(1970, 1, 1, tzinfo=datetime.timezone.utc),
-                        datetime.datetime(
-                            9999,
-                            12,
-                            31,
-                            23,
-                            59,
-                            59,
-                            999999,
-                            tzinfo=datetime.timezone.utc,
-                        ),
-                    ],
+                    "datetime_col": pandas.Series(
+                        [
+                            datetime.datetime(1, 1, 1),
+                            datetime.datetime(1970, 1, 1),
+                            datetime.datetime(9999, 12, 31, 23, 59, 59, 999999),
+                        ],
+                        dtype="object" if PANDAS_VERSION < (2, 1) else "datetime64[us]",
+                    ),
+                    "timestamp_col": pandas.Series(
+                        [
+                            datetime.datetime(1, 1, 1, tzinfo=datetime.timezone.utc),
+                            datetime.datetime(1970, 1, 1, tzinfo=datetime.timezone.utc),
+                            datetime.datetime(
+                                9999,
+                                12,
+                                31,
+                                23,
+                                59,
+                                59,
+                                999999,
+                                tzinfo=datetime.timezone.utc,
+                            ),
+                        ],
+                        dtype="object"
+                        if PANDAS_VERSION < (2, 1)
+                        else pandas.DatetimeTZDtype(unit="us", tz="UTC"),
+                    ),
                 },
                 columns=["row_num", "date_col", "datetime_col", "timestamp_col"],
             ),
